@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Рублёвый кликер</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,sans-serif;background:#111827;color:#fff;min-height:100vh;display:flex;justify-content:center;padding:16px}
+.card{width:min(760px,96vw);background:#1f2937;border-radius:24px;padding:20px;text-align:center;box-shadow:0 20px 60px #0006}
+h1{margin:0 0 6px}.hint,.small{color:#9ca3af;font-size:13px}
+.balance{font-size:42px;font-weight:800;margin:18px 0 2px}.count{color:#d1d5db}
+#tap{border:0;border-radius:50%;width:190px;height:190px;background:#f59e0b;color:#111827;font-size:28px;font-weight:800;cursor:pointer;box-shadow:0 10px 0 #b45309;transition:.08s;margin:18px}
+#tap:active{transform:translateY(7px);box-shadow:0 3px 0 #b45309}
+.top{display:flex;gap:9px;justify-content:center;flex-wrap:wrap}
+.ui{border:0;border-radius:13px;padding:11px 16px;background:#374151;color:#fff;font-weight:800;cursor:pointer}
+.panel{display:none;background:#111827;border-radius:18px;padding:15px;margin:12px 0;text-align:left}
+.panel.open{display:block;animation:pop .2s ease}
+@keyframes pop{from{opacity:0;transform:translateY(10px) scale(.98)}to{opacity:1;transform:none}}
+.item{background:#1f2937;border-radius:13px;padding:12px;margin:8px 0}
+.item button,.choice{border:0;border-radius:10px;padding:9px 12px;font-weight:800;cursor:pointer;margin-top:7px}
+.item button:disabled{opacity:.45;cursor:not-allowed}
+.hidden{display:none!important}
+.colors,.choices{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.choice{margin:0;background:#374151;color:#fff}
+.msg{color:#fbbf24;font-weight:700;min-height:20px;margin-top:8px}
+.arena{display:none;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}
+.arena.show{display:grid}
+.box{background:#111827;border-radius:17px;padding:13px}
+.gameBtn{width:100%;height:150px;border:0;border-radius:20px;color:#fff;font-size:24px;font-weight:900;cursor:pointer}
+.blue{background:#2563eb}.red{background:#dc2626}
+.timer{font-size:28px;font-weight:900;margin:7px}
+.result{display:none;background:#111827;border-radius:17px;padding:17px;margin-top:14px}
+.result.show{display:block;animation:pop .2s ease}
+.resultBtns{display:flex;gap:9px;justify-content:center}
+.case{display:none;background:#111827;border-radius:17px;padding:17px;margin:14px 0}
+.case.show{display:block;animation:pop .3s ease}.suit{font-size:72px;animation:shake .7s}
+@keyframes shake{0%,100%{transform:rotate(0)}30%{transform:rotate(-8deg)}60%{transform:rotate(8deg)}}
+.dev{margin-top:20px;padding-top:13px;border-top:1px solid #374151;font-size:13px}
+.dev a{color:#93c5fd;text-decoration:none;font-weight:800}
+.note{margin-top:13px;font-size:11px;color:#9ca3af;line-height:1.4}
+</style>
+</head>
+<body>
+<div class="card">
+<h1>💰 Рублёвый кликер</h1>
+<div class="hint">Каждый тап приносит виртуальные ₽</div>
+<div class="balance" id="balance">0 ₽</div>
+<div class="count">Тапов: <span id="count">0</span></div>
+<button id="tap">ТАП</button>
+
+<div class="top">
+<button class="ui" id="colorBtn">🎨 Цвет кнопки</button>
+<button class="ui" id="shopBtn">🛒 Магазин</button>
+</div>
+<div class="top" style="margin-top:9px">
+<button class="ui" id="multiBtn">🎮 Мультиплеер</button>
+</div>
+
+<div class="panel" id="colorPanel">
+<h2>🎨 Цвет кнопки</h2>
+<div class="colors">
+<button class="choice" data-color="red">🔴 Красный — 50 ₽</button>
+<button class="choice" data-color="blue">🔵 Синий — 50 ₽</button>
+<button class="choice" data-color="green">🟢 Зелёный — 50 ₽</button>
+<button class="choice" data-color="yellow">🟡 Жёлтый — 50 ₽</button>
+<button class="choice" data-color="purple">🟣 Фиолетовый — 50 ₽</button>
+<button class="choice" data-color="orange">🟠 Оранжевый — 50 ₽</button>
+<button class="choice" data-color="rb">🔴🔵 Красно-синий — 100 ₽</button>
+</div>
+</div>
+
+<div class="panel" id="shopPanel">
+<h2>🛒 Магазин</h2>
+<div class="item" id="item2"><b>×2 клик</b><br><span class="small">1 нажатие = 2 ₽</span><br><button data-power="2" data-price="100">Купить за 100 ₽</button></div>
+<div class="item hidden" id="item3"><b>×3 клик</b><br><span class="small">1 нажатие = 3 ₽</span><br><button data-power="3" data-price="150">Купить за 150 ₽</button></div>
+<div class="item hidden" id="item4"><b>×4 клик</b><br><span class="small">1 нажатие = 4 ₽</span><br><button data-power="4" data-price="300">Купить за 300 ₽</button></div>
+<div class="item hidden" id="item5"><b>×5 клик</b><br><span class="small">1 нажатие = 5 ₽</span><br><button data-power="5" data-price="600">Купить за 600 ₽</button></div>
+</div>
+
+<div class="panel" id="multiPanel">
+<h2>🎮 Игра с ботом</h2>
+<p>Выбери сложность:</p>
+<div class="choices">
+<button class="choice" data-diff="easy">🟢 Лёгкий</button>
+<button class="choice" data-diff="medium">🟡 Средний</button>
+<button class="choice" data-diff="hard">🟠 Сложный</button>
+<button class="choice" data-diff="impossible">🔴 Невозможный</button>
+<button class="choice" data-diff="heaven">🌌 Небесный</button>
+</div>
+<p>Время раунда:</p>
+<div class="choices">
+<button class="choice" data-time="30">30 секунд</button>
+<button class="choice" data-time="60">1 минута</button>
+<button class="choice" data-time="120">2 минуты</button>
+<button class="choice" data-time="300">5 минут</button>
+</div>
+<div class="msg" id="multiMsg">Сначала выбери сложность.</div>
+</div>
+
+<div class="arena" id="arena">
+<div class="box"><b>🔵 ТЫ</b><div class="timer" id="timer">30</div><button class="gameBtn blue" id="playerTap">ТАП</button><div>Твои рубли: <b id="playerRub">0 ₽</b></div></div>
+<div class="box"><b>🔴 БОТ</b><div class="timer">?</div><button class="gameBtn red" disabled>ТАП</button><div>Рубли и тапы бота скрыты</div></div>
+</div>
+
+<div class="result" id="result">
+<h2>🏁 Раунд закончился!</h2>
+<p id="resultText"></p>
+<div class="resultBtns"><button class="ui" id="newRound">Новый раунд</button><button class="ui" id="lobby">Лобби</button></div>
+</div>
+
+<div class="case" id="case">
+<div class="suit">💼</div><h2>Чемодан найден!</h2>
+<p>Хотите забрать чемодан?</p>
+<button class="ui" id="takeCase">Да</button>
+<button class="ui" id="skipCase">Нет</button>
+<div class="msg" id="caseMsg"></div>
+</div>
+
+<div class="dev">📺 <b>Канал разработчика</b><br>
+<a href="https://youtube.com/channel/UC9ANpiTQ8WH2m9DGEitSYtA" target="_blank" rel="noopener">Открыть канал разработчика</a></div>
+<div class="note">Учебный прототип. Деньги виртуальные и никуда не переводятся.</div>
+</div>
+
+<script>
+let taps=Number(localStorage.getItem('rubleClickerTaps')||0);
+let power=Number(localStorage.getItem('rubleClickerPower')||1);
+let buttonColor=localStorage.getItem('rubleClickerColor')||'orange';
+let caseShown=localStorage.getItem('rubleClickerCaseShown')==='1';
+const $=id=>document.getElementById(id), tap=$('tap');
+
+function save(){
+ localStorage.setItem('rubleClickerTaps',taps);
+ localStorage.setItem('rubleClickerPower',power);
+ localStorage.setItem('rubleClickerColor',buttonColor);
+}
+function update(){
+ $('balance').textContent=taps+' ₽'; $('count').textContent=taps;
+ const bg={red:'#dc2626',blue:'#2563eb',green:'#16a34a',yellow:'#facc15',purple:'#9333ea',orange:'#f59e0b'};
+ tap.style.background=buttonColor==='rb'?'linear-gradient(135deg,#dc2626 50%,#2563eb 50%)':bg[buttonColor];
+ tap.style.color=['yellow','orange'].includes(buttonColor)?'#111827':'#fff';
+ [2,3,4,5].forEach(n=>{if(n===2||power>=n-1)$('item'+n).classList.remove('hidden')});
+ document.querySelectorAll('[data-power]').forEach(b=>{
+  const n=+b.dataset.power,price=+b.dataset.price;
+  b.disabled=n<=power||taps<price;
+  if(n<=power)b.textContent='✅ Куплено';
+ });
+}
+function sound(){
+ const C=window.AudioContext||window.webkitAudioContext;if(!C)return;
+ window.ac=window.ac||new C();if(ac.state==='suspended')ac.resume();
+ const o=ac.createOscillator(),g=ac.createGain(),t=ac.currentTime;
+ o.type='sine';o.frequency.setValueAtTime(520,t);o.frequency.exponentialRampToValueAtTime(180,t+.06);
+ g.gain.setValueAtTime(.07,t);g.gain.exponentialRampToValueAtTime(.001,t+.06);
+ o.connect(g).connect(ac.destination);o.start();o.stop(t+.06);
+}
+tap.onclick=()=>{
+ sound();
+ if(!antiBot()){return}
+ taps+=power;save();update();
+ if(taps>=1000&&!caseShown){caseShown=true;localStorage.setItem('rubleClickerCaseShown','1');$('case').classList.add('show')}
+};
+let clicks=[],blockedUntil=0;
+function antiBot(){
+ const now=Date.now();clicks=clicks.filter(t=>now-t<1000);
+ if(now<blockedUntil)return false;
+ clicks.push(now);
+ if(clicks.length>=18){
+  const intervals=[];for(let i=1;i<clicks.length;i++)intervals.push(clicks[i]-clicks[i-1]);
+  const avg=intervals.reduce((a,b)=>a+b,0)/intervals.length;
+  const same=intervals.filter(x=>Math.abs(x-avg)<5).length;
+  if(avg<65&&same>intervals.length*.65){blockedUntil=now+3000;clicks=[];return false}
+ }
+ return true;
+};
+$('shopBtn').onclick=()=>{$('shopPanel').classList.toggle('open');$('colorPanel').classList.remove('open')};
+$('colorBtn').onclick=()=>{$('colorPanel').classList.toggle('open');$('shopPanel').classList.remove('open')};
+document.querySelectorAll('[data-power]').forEach(b=>b.onclick=()=>{
+ const n=+b.dataset.power,price=+b.dataset.price;
+ if(n===power+1&&taps>=price){taps-=price;power=n;save();update()}
+});
+document.querySelectorAll('[data-color]').forEach(b=>b.onclick=()=>{
+ const c=b.dataset.color,price=c==='rb'?100:50;
+ if(taps>=price){taps-=price;buttonColor=c;save();update()}
+});
+$('takeCase').onclick=()=>{
+ const reward=Math.floor(Math.random()*999)+1;
+ taps+=reward;$('caseMsg').textContent='🎉 Вы получили '+reward+' ₽!';
+ $('takeCase').disabled=true;save();update()
+};
+$('skipCase').onclick=()=>$('case').classList.remove('show');
+
+let diff=null,roundTime=30,roundActive=false,playerRound=0,botRound=0,botPower=1,timerId,botId;
+const rate={easy:700,medium:450,hard:300,impossible:180,heaven:95};
+document.querySelectorAll('[data-diff]').forEach(b=>b.onclick=()=>{diff=b.dataset.diff;$('multiMsg').textContent='Сложность: '+b.textContent+' — теперь выбери время.'});
+document.querySelectorAll('[data-time]').forEach(b=>b.onclick=()=>{roundTime=+b.dataset.time;if(diff)startRound();else $('multiMsg').textContent='Сначала выбери сложность.'});
+$('multiBtn').onclick=()=>{$('multiPanel').classList.toggle('open');$('arena').classList.remove('show');$('result').classList.remove('show')};
+function startRound(){
+ roundActive=true;playerRound=0;botRound=0;botPower=1;
+ $('multiPanel').classList.remove('open');$('result').classList.remove('show');$('arena').classList.add('show');
+ let left=roundTime;$('timer').textContent=left;$('playerRub').textContent='0 ₽';
+ clearInterval(timerId);clearTimeout(botId);
+ timerId=setInterval(()=>{left--;$('timer').textContent=left;if(left<=0)endRound()},1000);
+ function bot(){
+  if(!roundActive)return;
+  if(botPower===1&&botRound>=100){botRound-=100;botPower=2}
+  else if(botPower===2&&botRound>=150){botRound-=150;botPower=3}
+  else if(botPower===3&&botRound>=300){botRound-=300;botPower=4}
+  else if(botPower===4&&botRound>=600){botRound-=600;botPower=5}
+  botRound+=botPower;
+  botId=setTimeout(bot,rate[diff]+Math.random()*100);
+ }
+ bot();
+}
+$('playerTap').onclick=()=>{if(roundActive){sound();playerRound+=power;$('playerRub').textContent=playerRound+' ₽'}};
+function endRound(){
+ if(!roundActive)return;roundActive=false;clearInterval(timerId);clearTimeout(botId);
+ $('arena').classList.remove('show');$('result').classList.add('show');
+ if(playerRound>botRound){taps+=10000;$('resultText').textContent='🏆 Ты выиграл! +10 000 ₽'}
+ else if(playerRound<botRound){taps=Math.max(0,taps-50);$('resultText').textContent='😔 Ты проиграл. −50 ₽'}
+ else $('resultText').textContent='🤝 Ничья!';
+ save();update();
+}
+$('newRound').onclick=()=>{if(diff)startRound()};
+$('lobby').onclick=()=>{$('result').classList.remove('show');$('arena').classList.remove('show')};
+update();
+</script>
+</body>
+</html>
