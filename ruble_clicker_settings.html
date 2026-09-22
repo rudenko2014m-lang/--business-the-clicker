@@ -1,0 +1,419 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<button id="settingsTrigger" type="button" title="Настройки">⚙️</button>
+<title>Рублёвый кликер</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,sans-serif;background:#111827;color:#fff;min-height:100vh;display:flex;justify-content:center;padding:16px}
+.card{width:min(760px,96vw);background:#1f2937;border-radius:24px;padding:20px;text-align:center;box-shadow:0 20px 60px #0006}
+h1{margin:0 0 6px}.hint,.small{color:#9ca3af;font-size:13px}
+.balance{font-size:42px;font-weight:800;margin:18px 0 2px}.count{color:#d1d5db}
+#tap{border:0;border-radius:50%;width:190px;height:190px;background:#f59e0b;color:#111827;font-size:28px;font-weight:800;cursor:pointer;box-shadow:0 10px 0 #b45309;transition:.08s;margin:18px}
+#tap:active{transform:translateY(7px);box-shadow:0 3px 0 #b45309}
+.top{display:flex;gap:9px;justify-content:center;flex-wrap:wrap}.top.in-round{display:none}
+.ui{border:0;border-radius:13px;padding:11px 16px;background:#374151;color:#fff;font-weight:800;cursor:pointer}
+.panel{display:none;background:#111827;border-radius:18px;padding:15px;margin:12px 0;text-align:left}
+.panel.open{display:block;animation:pop .2s ease}
+@keyframes pop{from{opacity:0;transform:translateY(10px) scale(.98)}to{opacity:1;transform:none}}
+.item{background:#1f2937;border-radius:13px;padding:12px;margin:8px 0}
+.item button,.choice{border:0;border-radius:10px;padding:9px 12px;font-weight:800;cursor:pointer;margin-top:7px}
+.item button:disabled{opacity:.45;cursor:not-allowed}
+.hidden{display:none!important}
+.colors,.choices{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.choice{margin:0;background:#374151;color:#fff}
+.msg{color:#fbbf24;font-weight:700;min-height:20px;margin-top:8px}
+.arena{display:none;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}
+.arena.show{display:grid}
+.box{background:#111827;border-radius:17px;padding:13px}
+.gameBtn{width:150px;height:150px;border:0;border-radius:50%;color:#fff;font-size:24px;font-weight:900;cursor:pointer}
+.blue{background:#2563eb}.red{background:#dc2626}
+.timer{font-size:28px;font-weight:900;margin:7px}
+.result{display:none;background:#111827;border-radius:17px;padding:17px;margin-top:14px}
+.result.show{display:block;animation:pop .2s ease}
+.resultBtns{display:flex;gap:9px;justify-content:center}
+.case{display:none;background:#111827;border-radius:17px;padding:17px;margin:14px 0}
+.case.show{display:block;animation:pop .3s ease}.suit{font-size:72px;animation:shake .7s}
+@keyframes shake{0%,100%{transform:rotate(0)}30%{transform:rotate(-8deg)}60%{transform:rotate(8deg)}}
+.dev{margin-top:20px;padding-top:13px;border-top:1px solid #374151;font-size:13px}
+.dev a{color:#93c5fd;text-decoration:none;font-weight:800}
+.note{margin-top:13px;font-size:11px;color:#9ca3af;line-height:1.4}
+
+.shop-btn{display:block!important;width:100%;min-height:46px;cursor:pointer;pointer-events:auto!important;opacity:1!important}
+.shop-btn:disabled{cursor:not-allowed;opacity:.55!important}
+
+.admin-secret{position:fixed;top:8px;right:8px;width:28px;height:28px;border:0;border-radius:50%;background:transparent;color:transparent;opacity:.12;cursor:pointer;z-index:9999}
+.admin-secret:hover{opacity:.45;color:#64748b;background:rgba(255,255,255,.7)}
+.admin-panel{display:none;position:fixed;top:42px;right:10px;width:260px;background:#fff;border:1px solid #cbd5e1;border-radius:14px;padding:14px;box-shadow:0 12px 30px rgba(0,0,0,.18);z-index:10000}
+.admin-panel.open{display:block}
+.admin-panel h3{margin:0 0 10px}
+.admin-panel button{width:100%;margin-top:7px;padding:9px;border:0;border-radius:9px;cursor:pointer}
+</style>
+
+<style id="settings-visible-fix">
+#adminTrigger{
+  display:block !important;
+  position:relative !important;
+  z-index:9999 !important;
+  margin:0 auto 8px !important;
+  width:42px !important;
+  height:32px !important;
+  border:1px solid rgba(255,255,255,.25) !important;
+  border-radius:10px !important;
+  background:rgba(0,0,0,.18) !important;
+  color:rgba(255,255,255,.75) !important;
+  font-size:18px !important;
+  cursor:pointer !important;
+}
+</style>
+</head>
+<body>
+<div class="card">
+<h1>💰 Рублёвый кликер</h1>
+<div class="hint">Каждый тап приносит виртуальные ₽</div>
+<div class="balance" id="balance">0 ₽</div>
+<div class="count">Тапов: <span id="count">0</span></div>
+<button id="tap">ТАП</button>
+
+<div class="top">
+<button class="ui" id="colorBtn">🎨 Цвет кнопки</button>
+<button class="ui" id="shopBtn">🛒 Магазин</button>
+</div>
+<div class="top" style="margin-top:9px">
+<button class="ui" id="multiBtn">🎮 Мультиплеер</button>
+</div>
+
+<div class="panel" id="colorPanel">
+<h2>🎨 Цвет кнопки</h2>
+<div class="colors">
+<button class="choice" data-color="red">🔴 Красный — 100 ₽</button>
+<button class="choice" data-color="blue">🔵 Синий — 100 ₽</button>
+<button class="choice" data-color="green">🟢 Зелёный — 100 ₽</button>
+<button class="choice" data-color="yellow">🟡 Жёлтый — 100 ₽</button>
+<button class="choice" data-color="purple">🟣 Фиолетовый — 100 ₽</button>
+<button class="choice" data-color="orange">🟠 Оранжевый — 100 ₽</button>
+<button class="choice" data-color="rb">🔴🔵 Красно-синий — 200 ₽</button>
+</div>
+</div>
+
+<div class="panel" id="shopPanel">
+<div class="item"><div><b>×1</b><small>Базовый множитель</small></div><button class="shop-btn" data-power="1" data-price="0">Выбрано ✓</button></div>
+<div class="item"><div><b>×2</b><small>200 ₽</small></div><button class="shop-btn" data-power="2" data-price="200">Купить за 200 ₽</button></div>
+<div class="item"><div><b>×3</b><small>300 ₽</small></div><button class="shop-btn" data-power="3" data-price="300">Купить за 300 ₽</button></div>
+<div class="item"><div><b>×4</b><small>600 ₽</small></div><button class="shop-btn" data-power="4" data-price="600">Купить за 600 ₽</button></div>
+<div class="item"><div><b>×5</b><small>1 200 ₽</small></div><button class="shop-btn" data-power="5" data-price="1200">Купить за 1 200 ₽</button></div>
+<div class="item"><div><b>×10</b><small>10 000 ₽</small></div><button class="shop-btn" data-power="10" data-price="10000">Купить за 10 000 ₽</button></div>
+<div class="item"><div><b>×15</b><small>15 000 ₽</small></div><button class="shop-btn" data-power="15" data-price="15000">Купить за 15 000 ₽</button></div>
+<div class="item"><div><b>♻️ Перерождение</b><small>30 000 ₽</small></div><button class="shop-btn" id="prestigeBtn">Переродиться за 30 000 ₽</button></div>
+
+
+</div>
+
+<div class="panel" id="multiPanel">
+<h2>🎮 Игра с ботом</h2>
+<p>Выбери сложность:</p>
+<div class="choices">
+<button class="choice" data-diff="easy">🟢 Лёгкий</button>
+<button class="choice" data-diff="medium">🟡 Средний</button>
+<button class="choice" data-diff="hard">🟠 Сложный</button>
+<button class="choice" data-diff="impossible">🔴 Невозможный</button>
+<button class="choice" data-diff="heaven">🌌 Небесный</button>
+</div>
+<p>Время раунда:</p>
+<div class="choices">
+<button class="choice" data-time="30">30 секунд</button>
+<button class="choice" data-time="60">1 минута</button>
+<button class="choice" data-time="120">2 минуты</button>
+<button class="choice" data-time="300">5 минут</button>
+</div>
+<div class="msg" id="multiMsg">Сначала выбери сложность.</div>
+</div>
+
+<div class="arena" id="arena">
+<div class="box"><b>🔵 ТЫ</b><div class="timer" id="timer">30</div><button class="gameBtn blue" id="playerTap">ТАП</button><div>Твои рубли: <b id="playerRub">0 ₽</b></div></div>
+<div class="box"><b>🔴 БОТ</b><div class="timer">?</div><button class="gameBtn red" disabled>ТАП</button><div>Рубли и тапы бота скрыты</div></div>
+</div>
+
+<div class="result" id="result">
+<h2>🏁 Раунд закончился!</h2>
+<p id="resultText"></p><p id="botFinalScore"></p>
+<div class="resultBtns"><button class="ui" id="newRound">Новый раунд</button><button class="ui" id="lobby">Лобби</button></div>
+</div>
+
+<div class="case" id="case">
+<div class="suit">💼</div><h2>Чемодан найден!</h2>
+<p>Хотите забрать чемодан?</p>
+<button class="ui" id="takeCase">Да</button>
+<button class="ui" id="skipCase">Нет</button>
+<div class="msg" id="caseMsg"></div>
+</div>
+
+<div class="dev">📺 <b>Канал разработчика</b><br>
+<a href="https://youtube.com/channel/UC9ANpiTQ8WH2m9DGEitSYtA" target="_blank" rel="noopener">Открыть канал разработчика</a></div>
+<div class="note">Учебный прототип. Деньги виртуальные и никуда не переводятся.</div>
+</div>
+
+<script>
+
+const $=id=>document.getElementById(id);
+let taps=Number(localStorage.getItem('rubleClickerTaps')||0);
+let power=Number(localStorage.getItem('rubleClickerPower')||1);
+let buttonColor=localStorage.getItem('rubleClickerColor')||'orange';
+let ownedColors=JSON.parse(localStorage.getItem('rubleClickerOwnedColors')||'["orange"]');
+let prestigeCount=Number(localStorage.getItem('rubleClickerPrestige')||0);
+let ownedPowers=JSON.parse(localStorage.getItem('rubleClickerOwnedPowers')||'[]');
+if(!ownedPowers.length){ const old={1:true,2:false,3:false,4:false,5:false,10:false,15:false}; if(power>1) old[power]=true; ownedPowers=Object.keys(old).filter(k=>old[k]).map(Number); if(!ownedPowers.includes(1))ownedPowers.unshift(1); }
+
+const colorPrices={red:100,blue:100,green:100,yellow:100,purple:100,orange:100,rb:200};
+const bg={red:'#dc2626',blue:'#2563eb',green:'#16a34a',yellow:'#facc15',purple:'#9333ea',orange:'#f59e0b'};
+
+function save(){
+ localStorage.setItem('rubleClickerTaps',String(taps));
+ localStorage.setItem('rubleClickerPower',String(power));
+ localStorage.setItem('rubleClickerColor',buttonColor);
+ localStorage.setItem('rubleClickerOwnedColors',JSON.stringify(ownedColors));
+ localStorage.setItem('rubleClickerPrestige',String(prestigeCount));
+ localStorage.setItem('rubleClickerOwnedPowers',JSON.stringify(ownedPowers));
+}
+function sound(){}
+function update(){
+ if($('balance'))$('balance').textContent=taps+' ₽';
+ if($('count'))$('count').textContent=taps;
+
+ const tap=$('tap');
+ if(tap){
+  tap.style.background=buttonColor==='rb'
+   ?'linear-gradient(135deg,#dc2626 50%,#2563eb 50%)'
+   :(bg[buttonColor]||bg.orange);
+  tap.style.color=['yellow','orange'].includes(buttonColor)?'#111827':'#fff';
+ }
+
+ document.querySelectorAll('[data-power]').forEach(b=>{
+  const n=Number(b.dataset.power), price=Number(b.dataset.price||0);
+  if(n===1){ b.disabled=false; b.textContent=power===1?'Надето ✓':'Надеть'; return; }
+  const owned=ownedPowers.includes(n);
+  const levels=[2,3,4,5,10,15];
+  const idx=levels.indexOf(n);
+  const prev=idx>0?levels[idx-1]:1;
+  if(owned){
+    b.disabled=false;
+    b.textContent=power===n?'Надето ✓':'Надеть';
+  }else{
+    b.disabled=!(ownedPowers.includes(prev) && taps>=price);
+    b.textContent='Купить за '+price.toLocaleString('ru-RU')+' ₽';
+  }
+ });
+
+ document.querySelectorAll('[data-color]').forEach(b=>{
+  const c=b.dataset.color, price=colorPrices[c];
+  if(ownedColors.includes(c)){
+   b.textContent=buttonColor===c?'Надето ✓':'Надеть';
+   b.disabled=false;
+  }else{
+   b.textContent='Купить за '+price+' ₽';
+   b.disabled=taps<price;
+  }
+ });
+ updatePrestige();
+}
+
+const tap=$('tap');
+if(tap)tap.onclick=()=>{
+ taps+=power;
+ save();
+ update();
+};
+
+document.querySelectorAll('[data-power]').forEach(b=>{
+ b.onclick=()=>{
+  const n=Number(b.dataset.power), price=Number(b.dataset.price||0);
+  const levels=[2,3,4,5,10,15];
+  const idx=levels.indexOf(n);
+  const prev=idx>0?levels[idx-1]:1;
+  if(n===1){ power=1; save(); update(); return; }
+  if(ownedPowers.includes(n)){
+   power=n; save(); update(); return;
+  }
+  if(ownedPowers.includes(prev) && taps>=price){
+   taps-=price;
+   ownedPowers.push(n);
+   save();
+   update();
+  }
+ };
+});
+
+document.querySelectorAll('[data-color]').forEach(b=>{
+ b.onclick=()=>{
+  const c=b.dataset.color, price=colorPrices[c];
+  if(ownedColors.includes(c)){
+   buttonColor=c;
+  }else if(taps>=price){
+   taps-=price;
+   ownedColors.push(c);
+   buttonColor=c;
+  }else return;
+  save(); update();
+ };
+});
+
+const prestigeBtn=$('prestigeBtn');
+function updatePrestige(){
+ if(!prestigeBtn)return;
+ if(prestigeCount>=2){
+  prestigeBtn.disabled=true;
+  prestigeBtn.textContent='🔧 3-е перерождение — в доработке';
+ }else{
+  prestigeBtn.disabled=!(power===15 && taps>=30000);
+  prestigeBtn.textContent=prestigeBtn.disabled
+   ?'Перерождение — 30 000 ₽'
+   :'♻️ Переродиться за 30 000 ₽';
+ }
+}
+if(prestigeBtn)prestigeBtn.onclick=()=>{
+ if(prestigeCount>=2 || !ownedPowers.includes(15) || taps<30000)return;
+ taps=0;
+ prestigeCount++;
+ power=prestigeCount===1?1.5:2;
+ ownedPowers=[1];
+ save();
+ update();
+};
+
+const colorBtn=$('colorBtn'),shopBtn=$('shopBtn'),multiBtn=$('multiBtn');
+if(colorBtn)colorBtn.onclick=()=>{ $('colorPanel')?.classList.toggle('open'); $('shopPanel')?.classList.remove('open'); };
+if(shopBtn)shopBtn.onclick=()=>{ $('shopPanel')?.classList.toggle('open'); $('colorPanel')?.classList.remove('open'); };
+if(multiBtn)multiBtn.onclick=()=>{ $('multiPanel')?.classList.toggle('open'); };
+
+let diff=null,roundTime=30,roundActive=false,playerRound=0,botRound=0,timerId=null,botId=null;
+const rate={easy:700,medium:450,hard:300,impossible:180,heaven:95};
+document.querySelectorAll('[data-diff]').forEach(b=>b.onclick=()=>{
+ diff=b.dataset.diff;
+ if($('multiMsg'))$('multiMsg').textContent='Сложность: '+b.textContent+' — теперь выбери время.';
+});
+document.querySelectorAll('[data-time]').forEach(b=>b.onclick=()=>{
+ roundTime=Number(b.dataset.time);
+ if(diff)startRound();
+});
+function startRound(){
+ roundActive=true;playerRound=0;botRound=0;
+ if($('arena'))$('arena').classList.add('show');
+ if($('multiPanel'))$('multiPanel').classList.remove('open');
+ if($('playerRub'))$('playerRub').textContent='0 ₽';
+ let left=roundTime;
+ if($('timer'))$('timer').textContent=left;
+ clearInterval(timerId);clearTimeout(botId);
+ timerId=setInterval(()=>{left--;if($('timer'))$('timer').textContent=left;if(left<=0)endRound()},1000);
+ const bot=()=>{
+  if(!roundActive)return;
+  botRound+=1;
+  if($('botRub'))$('botRub').textContent=botRound+' ₽';
+  botId=setTimeout(bot,(rate[diff]||500));
+ };
+ bot();
+}
+const playerTap=$('playerTap');
+if(playerTap)playerTap.onclick=()=>{
+ if(!roundActive)return;
+ playerRound+=power;
+ if($('playerRub'))$('playerRub').textContent=playerRound+' ₽';
+};
+function endRound(){
+ if(!roundActive)return;
+ roundActive=false;
+ clearInterval(timerId);clearTimeout(botId);
+ if($('arena'))$('arena').classList.remove('show');
+ if($('result'))$('result').classList.add('show');
+ if($('resultText'))$('resultText').textContent=
+  playerRound>botRound?'🏆 Ты выиграл!':
+  playerRound<botRound?'😔 Ты проиграл.':'🤝 Ничья!';
+ if($('botResult'))$('botResult').textContent='🤖 Очки бота: '+botRound+' ₽';
+}
+if($('newRound'))$('newRound').onclick=()=>startRound();
+if($('lobby'))$('lobby').onclick=()=>{$('result')?.classList.remove('show');$('arena')?.classList.remove('show');};
+
+update();
+
+const adminSecret=$('adminSecret');
+const adminPanel=$('adminPanel');
+if(adminSecret){
+ adminSecret.onclick=()=>{
+  const code=prompt('Введите код администратора:');
+  if(code==='228терминатор'){
+   adminPanel.classList.add('open');
+  }else if(code!==null){
+   alert('Неверный код');
+  }
+ };
+}
+if($('adminClose'))$('adminClose').onclick=()=>adminPanel.classList.remove('open');
+if($('adminAdd'))$('adminAdd').onclick=()=>{taps+=10000;save();update();};
+if($('adminMax'))$('adminMax').onclick=()=>{ownedPowers=[1,2,3,4,5,10,15];save();update();};
+
+
+</script>
+
+
+
+
+
+
+</div>
+
+
+<script id="settings-visible-fix-script">
+document.addEventListener('DOMContentLoaded', function () {
+  var btn = document.getElementById('settingsTrigger');
+  if (!btn) return;
+
+  var panel = document.getElementById('settingsPanel');
+  if (!panel) {
+    panel = document.createElement('div');
+    panel.id = 'settingsPanel';
+    panel.innerHTML =
+      '<div class="settings-title">⚙️ Настройки</div>' +
+      '<div class="settings-subtitle">Звук</div>' +
+      '<label><input type="radio" name="gameSound" value="none"> 🔇 Без звука</label>' +
+      '<label><input type="radio" name="gameSound" value="snow"> ❄️ Снег</label>' +
+      '<label><input type="radio" name="gameSound" value="chocolate"> 🍫 Хруст шоколада</label>';
+    document.body.appendChild(panel);
+  }
+
+  var style = document.createElement('style');
+  style.textContent = `
+    #settingsPanel{
+      display:none; position:fixed; z-index:10000;
+      top:58px; left:50%; transform:translateX(-50%);
+      width:min(310px, calc(100vw - 32px));
+      padding:16px; box-sizing:border-box;
+      border-radius:16px; background:#fff; color:#222;
+      box-shadow:0 10px 30px rgba(0,0,0,.28);
+      font-family:inherit;
+    }
+    #settingsPanel.open{display:block}
+    #settingsPanel .settings-title{font-size:20px;font-weight:700;margin-bottom:14px}
+    #settingsPanel .settings-subtitle{font-weight:600;margin-bottom:8px}
+    #settingsPanel label{display:block;padding:9px 4px;cursor:pointer}
+    #settingsPanel input{margin-right:8px}
+  `;
+  document.head.appendChild(style);
+
+  var saved = localStorage.getItem('rubleClickerSound') || 'none';
+  var radios = panel.querySelectorAll('input[name="gameSound"]');
+  radios.forEach(function(radio){
+    radio.checked = radio.value === saved;
+    radio.addEventListener('change', function(){
+      localStorage.setItem('rubleClickerSound', this.value);
+    });
+  });
+
+  btn.addEventListener('click', function(){
+    panel.classList.toggle('open');
+  });
+});
+</script>
+
+</body>
+</html>
